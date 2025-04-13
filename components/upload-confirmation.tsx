@@ -137,8 +137,7 @@ export default function UploadConfirmation({
               {/* Display the generated meme */}
               <div className="relative aspect-square w-full max-w-[250px] mx-auto border rounded-md overflow-hidden">
                 <Image
-                  src={generatedImage || '/placeholder.svg'}
-                  alt="Generated meme"
+                  src={ "https://media.decentralized-content.com/-/rs:fill:2500:3750/g:ce/f:webp/aHR0cHM6Ly9tYWdpYy5kZWNlbnRyYWxpemVkLWNvbnRlbnQuY29tL2lwZnMvYmFmeWJlaWhlaW51bHpuZHE3eHVhYm1rdGdkdnRnc3ZtaTNodmVyM25ubmlqeXBpMmh1Z2ZkNWg3aHU" }
                   fill
                   className="object-contain"
                   unoptimized
