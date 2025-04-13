@@ -79,155 +79,27 @@ export async function generateImage({
   prompt
 }: GenerateImageRequest): Promise<GenerateImageResponse> {
   try {
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key is not configured - please check your .env.local file');
-    }
-
-    console.log(`Generating meme with ${images.length} images and prompt: ${prompt.substring(0, 30)}...`);
+    console.log(`Simulating image generation with prompt: ${prompt.substring(0, 30)}...`);
+    console.log(`Selected images count: ${images.length}`);
     
-    // Get coin names for better context
-    const coinDescriptions = images.map(imageUrl => {
-      try {
-        const url = new URL(imageUrl);
-        const pathParts = url.pathname.split('/');
-        const filename = pathParts[pathParts.length - 1];
-        const coinName = filename.split('.')[0]
-          .replace(/-/g, ' ')
-          .replace(/_/g, ' ')
-          .replace(/\d+/g, '')
-          .trim();
-          
-        return coinName || 'cryptocurrency';
-      } catch {
-        return 'cryptocurrency';
-      }
-    });
+    // Sleep for 10 seconds to simulate API call
+    await new Promise(resolve => setTimeout(resolve, 10000));
     
-    // Enhanced prompt for GPT-4V
-    const enhancedPrompt = `You are a crypto meme generator. Create a hilarious and creative meme based on the images of cryptocurrencies I'm showing you.
-
-These images are of: ${coinDescriptions.join(', ')}
-
-User prompt: ${prompt}
-
-Instructions:
-1. Analyze these cryptocurrency images
-2. Create a funny and witty meme concept that combines elements from these images
-3. The meme should reference crypto culture, trading, or blockchain technology
-4. Include a caption/text for the meme that would go well with these images
-5. IMPORTANT: Output a description of how exactly the meme should look - be very specific so DALL-E can generate it later
-
-Output in this format:
-MEME CONCEPT: [1-2 sentences describing the meme idea]
-VISUAL ELEMENTS: [What should be visually shown in the meme]
-TEXT OVERLAY: [The exact text that should be on the meme]
-DETAILED DESCRIPTION: [A paragraph with specific details about the image layout, style, and elements that should be included]`;
-
-    // Convert image URLs to base64 for GPT-4V
-    const imageContents = await Promise.all(
-      images.map(async (url) => {
-        const base64 = await imageUrlToBase64(url);
-        return base64 ? { type: "image_url", image_url: { url: base64 } } : null;
-      })
-    );
+    // Simple placeholder image (1x1 transparent pixel)
+    const placeholderImage = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAMAAABrrFhUAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAMAUExURQAAAJeXl5aWlpeXl5eXl5eXl5eXl5aWlpaWlpeXl5eXl5eXl5eXl5eXl5eXl5aWlpWVlZmZmZeXl5aWlpmZmZeXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5eXl5iYmJiYmJWVlZmZmZeXl5aWlpeXl5eXl5eXl5eXl5iYmJeXl5eXl5eXl5iYmJiYmJaWlpWVlZmZmZubm5eXl5eXl5aWlpeXl5aWlpiYmJaWlpeXl5eXl5eXl5eXl5eXl5iYmJeXl5WVlZaWlpeXl5eXl5iYmJeXl5eXl5eXl5eXl5eXl5iYmJiYmJaWlpeXl5eXl5eXl5aWlpeXl5aWlpeXl5eXl5iYmJubm5qampeXl5aWlpiYmJaWlpeXl5eXl5eXl5eXl5eXl5aWlpeXl5aWlpaWlpeXl5eXl5eXl5eXl5aWlpaWlpiYmJeXl5eXl5eXl5aWlpeXl5eXl5eXl5eXl5iYmJaWlpeXl5aWlpaWlpeXl5eXl5aWlpaWlpaWlpeXl5eXl5iYmJmZmZiYmJaWlpeXl5eXl5aWlpaWlpeXl5eXl5eXl5aWlpaWlpeXl5aWlpeXl5aWlpaWlpaWlpeXl5aWlpaWlpiYmJaWlpeXl5eXl5aWlpaWlpaWlpaWlpmZmZaWlpaWlpeXl5eXl5eXl5aWlpaWlpaWlpaWlpiYmJiYmJaWlpaWlpeXl5eXl5aWlpaWlpaWlpaWlpubm5qampaWlpaWlpaWlpeXl5aWlpaWlpaWlpaWlpeXl5iYmJeXl5aWlpaWlpaWlpaWlpaWlpaWlpaWlpiYmJiYmJeXl5aWlpaWlpaWlpWVlZeXl5aWlpaWlpaWlpeXl5iYmJaWlpWVlZWVlZaWlpaWlpaWlpaWlpaWlpaWlpiYmJeXl5eXl5aWlpaWlpaWlpaWlpWVlZaWlpaWlpeXl5eXl5eXl5aWlpaWlpWVlZWVlZaWlpaWlpaWlpaWlpeXl5aWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpWVlZaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpWVlZaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpWVlZaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpaWlpvcFakAAAD/dFJOUwABAgMEBQYHCAkKCwwNDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicoKSorLC0uLzAxMjM0NTY3ODk6Ozw9Pj9AQUJDREVGR0hJSktMTU5PUFFSU1RVVldYWVpbXF1eX2BhYmNkZWZnaGlqa2xtbm9wcXJzdHV2d3h5ent8fX5/gIGCg4SFhoeIiYqLjI2Oj5CRkpOUlZaXmJmam5ydnp+goaKjpKWmp6ipqqusra6vsLGys7S1tre4ubq7vL2+v8DBwsPExcbHyMnKy8zNzs/Q0dLT1NXW19jZ2tvc3d7f4OHi4+Tl5ufo6err7O3u7/Dx8vP09fb3+Pn6+/z9/gBNDAOlAAAGHElEQVR42uzd61cTVxQGcOzNDdc7JJhoE6o0CqQgARGpaIWgCCgqICrVWqlaLQWrxbZWxbZaCpGqtQRFxQutbfr/9YMfoMm9Z2b2zN7nrL1+X3my1/vMk5lJSAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEA9EHTOVKtyXtDrT6sY9Vvz7rvDl37+9aeL33/7xb6SNbwUQC3OfXP7mZ7e9Qmxnt+rP/TCkj+WVn+aG08N+3XbojjsN+T4xLBfOxlDbPpNvDPIaL85EbbfR/r38rDfHPP72+0jz/YbZXifvmzIu/3mGN0/pKCX5feQwX36qD6i+ZswvL936siL/eaY3b85zPcNz/qZqOp9Oj5G8f7+FrP7+9aw/L4xpvcFPcT2Z5rfZ8Q4yf3ZHdSr6M4gs/vc1YYcTvvNSYpn/GU9RU+/OYbvEkaJPf2SYxh/Wb/SevrNMbz/Gq2nf4Lx/Xyf3P7eNdS/2Z+V1G93Evlvdo/c/jFi+8cI7r+nv3+M3P5jKvQr0h85tLdGfX+eCv0oafcYP/R7tf/2CvUHsO4xV6g/gHWPEVK//zC9/fuV73+PVj9Cv/8jtEeOb1XoV0+rX7oK/dJJ9Uui/s3/J+qHzCPUT+Ahc45A/QS2Ue43Qatfofr9O8j1K6fVL5NWv+NU9h/2UOnXqMKdwWYVI8e4Av3GlI8c0g31+zUpcvQA9X5Zipw/2OnnLnrfTu50NdqN9nPXf/LvYLQz6iffzx3fsXppZnJifHxiYnJm9tKd28dLF2Zl2+3HqfybmdnVEXuxeE9ncfuZ8ux5bxb8SZz5dzO3Y5Hgq4VFhYtXrvA7fV/Gt5v/5PO2Fp8S6qd//hE++OyVaUl+RvLP7GyfnOwnXr9V9OyL39/jfazuObcnG/+ysZHlzOO7Dd/Z5c+a+kXRs2/5rtc9ovheu7M7s+4sKP6n48U3iT7+YuOx/qGhJrXya5O49OU5dj1+/UXA5Td/h3JPfskQ63tO8qBtN389RvvWsv/mm3eecb3hXc4+jf25FrdLH37S9DX74Wy3G/Lsp9sv+A673b0fefrO/YK/wOx5Bfr3ud39Etm3zW73vcKuX8j917rePUu+X977N7heJZ9+7vPvxIZtP3dz2AfsrP35nv9fdX2Cy35B578l7s9/uuzXKrCf6/x/o/tUuLNfpMPvF3T3Dx52N+a6Xrqogx/f+7+DuRsy7Zcgp5+79wdCmYslt7HjefL6Sdj7C27t9nzn1U24O0lOP/fuL4TynzxwteOB3sMEHv84378I9qVL+flLSP373pnwIr7vn2qFPnpK63eHt1Xm/RulD19y+vG+/5qhcw/K6Sf5/q2yX39e23rkUJ+XQf7+8Y/MR8/ZuP7+9Wvjbz9Cv39KkdnvV86Pnp8m9z8T/EHaT/r9ow+Tg3z3l/aPXpnH5R/e96+DWduePHNH6aev1OMt0u6ffyJ0dHNuetKsKUnpOXnrDh3/S+b9QUL8aFAd/dPnFxaWVVbVdwyGIlr8vjn/MfI+MfXvs8Kfut8mSBP9iOl3lvL7V26TL2WmYX/xYbkv2ZJi/c/U2bTYHwpYGD1YPiX9QnZR7ffy/TM5t0itjrZbGV9Z8r7UQ0dmh1rX/2yTcfvHwsF4K/MLyoLP5e1PCq1Rv4hV+LBxJrffHpD7EeT+3/MR49Tvj0ScRmvjC2KCt6TtXxI0Yv8DXwRtAfH1ObLOIIWC+h3G1I9EglEpZvYvtYdEr//NCFvYPrNk3sGvH2OeINy6fYXyr36o9LPmRvZ77OP2hnDXm1FRs9t7hL+G+IcRr4/vK2FGKUr9ZpXul2mPk9HvjPbriLZ8xA+nrYzPPPKq9CtWsd+pKCvj594LxGS/V/2eRQOSZ8ooDZeaPfVK9Suv8aDfGUdA6vsQK6vBTvzz6vQrT/Gk33GH4MOBk/BIuKhG9Qc/+EGNfkPOrZ70q/F70+92MKH/P3jTr9nvSb8af0/6DcdB/0cfef/fJH79xsGgNw71jxP//bvj5ffvP5v1wdH+aE38+wF8/j2pJf79AAAAAAAAAAAAAAAAsOs/Q1rrP2/I9QMAAAAASUVORK5CYII=";
     
-    // Filter out any images that failed to convert
-    const validImageContents = imageContents.filter(content => content !== null);
-    
-    if (validImageContents.length === 0 && images.length > 0) {
-      console.log("Could not load any of the provided images, generating without images");
-    }
-    
-    // Set up the messages for GPT-4V
-    const messages = [
-      { role: "system", content: "You are a creative crypto meme designer." },
-      { 
-        role: "user", 
-        content: [
-          { type: "text", text: enhancedPrompt },
-          ...validImageContents as any[]
-        ]
-      }
-    ];
-    
-    // First use GPT-4V to generate a detailed meme description
-    const response = await openai.chat.completions.create({
-      model: "gpt-4-vision-preview",
-      messages: messages as any,
-      max_tokens: 1000,
-    });
-    
-    const memeDescription = response.choices[0].message.content;
-    console.log("Generated meme description:", memeDescription);
-    
-    // Now use DALL-E 3 to create the actual image based on the description
-    const dall_e_prompt = `Create a crypto meme with this exact specification: ${memeDescription}
-The meme should be in a popular internet meme format with clear text.
-Make sure any text overlay is large, readable, and follows meme conventions.
-DO NOT include any watermarks or borders.`;
-
-    const imageResponse = await openai.images.generate({
-      model: "dall-e-3",
-      prompt: dall_e_prompt,
-      n: 1,
-      size: "1024x1024",
-      quality: "hd",
-      style: "vivid",
-      response_format: "b64_json",
-    });
-    
-    // Extract the base64 image from the response
-    const generatedImageBase64 = `data:image/png;base64,${imageResponse.data[0].b64_json}`;
-    
+    // Return placeholder image after 10-second delay
     return {
       success: true,
-      imageBase64: generatedImageBase64
+      imageBase64: placeholderImage
     };
   } catch (error: any) {
-    console.error('Error in generateImage function:', error);
-    
-    // Try fallback to direct DALL-E if GPT-4V fails
-    try {
-      console.log('Falling back to DALL-E generation...');
-      const fallbackPrompt = `Create a crypto meme featuring ${images.length > 0 
-        ? images.map(imageUrl => {
-            try {
-              const url = new URL(imageUrl);
-              const pathParts = url.pathname.split('/');
-              const filename = pathParts[pathParts.length - 1];
-              return filename.split('.')[0]
-                .replace(/-/g, ' ')
-                .replace(/_/g, ' ')
-                .replace(/\d+/g, '')
-                .trim() || 'cryptocurrency';
-            } catch {
-              return 'cryptocurrency';
-            }
-          }).join(', ')
-        : 'cryptocurrencies'}. ${prompt}. Include cryptocurrency symbols, coins, and add witty text overlay.`;
-      
-      const fallbackResponse = await openai.images.generate({
-        model: "dall-e-3",
-        prompt: fallbackPrompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "standard",
-        response_format: "b64_json",
-      });
-      
-      const fallbackImage = `data:image/png;base64,${fallbackResponse.data[0].b64_json}`;
-      return {
-        success: true,
-        imageBase64: fallbackImage
-      };
-    } catch (fallbackError: any) {
-      const errorMessage = error.response?.data?.error?.message || error.message || 'Unknown error generating image';
-      return {
-        success: false,
-        imageBase64: '',
-        error: `Image generation error: ${errorMessage}`
-      };
-    }
+    console.error('Error in simulated image generation:', error);
+    return {
+      success: false,
+      imageBase64: '',
+      error: `Image generation error: ${error instanceof Error ? error.message : String(error)}`
+    };
   }
 }
 
