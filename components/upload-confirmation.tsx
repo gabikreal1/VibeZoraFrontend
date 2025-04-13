@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, Loader2, ImagePlus } from "lucide-react"
 import { useWalletContext } from "@/context/wallet-context"
 import Image from "next/image"
-import { uploadToBackend, extractPreviewLinks, UploadResponse } from "@/lib/upload-service"
 import { ZoraCoin } from "@/lib/zora-coins-api"
 import { usePublicClient, useChainId, useWalletClient } from "wagmi"
 import { CreateCoinButton, type CoinParams } from "@/components/create-coin"
@@ -33,11 +32,9 @@ export default function UploadConfirmation({
   customPrompt 
 }: UploadConfirmationProps) {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
-  const [isUploading, setIsUploading] = useState(false)
   const [isCoinCreated, setIsCoinCreated] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [generatedImage, setGeneratedImage] = useState<string | null>(null)
-  const [uploadResponse, setUploadResponse] = useState<UploadResponse | null>(null)
   const { address, isConnected, formatDisplayAddress } = useWalletContext()
   const chainId = useChainId()
   const publicClient = usePublicClient()
@@ -46,12 +43,12 @@ export default function UploadConfirmation({
   // Effect to start the process when the dialog opens
   React.useEffect(() => {
     if (open && selectedCoins.length > 0) {
-      generateMergedImage();
+      generateMeme();
     }
   }, [open, selectedCoins]);
 
-  // Step 1: Generate a meme using OpenAI
-  const generateMergedImage = async () => {
+  // Generate a meme using OpenAI
+  const generateMeme = async () => {
     if (!isConnected || !address) {
       setError("Wallet not connected")
       return
@@ -83,9 +80,6 @@ export default function UploadConfirmation({
       // Store the generated image
       setGeneratedImage(result.imageBase64);
       setIsGeneratingImage(false);
-      
-      // Proceed to upload to backend
-      uploadToBackendWithGeneratedImage(result.imageBase64);
     } catch (err: any) {
       setIsGeneratingImage(false);
       setError(err.message || "Failed to generate meme");
@@ -93,35 +87,11 @@ export default function UploadConfirmation({
     }
   }
 
-  // Step 2: Upload the generated image to backend
-  const uploadToBackendWithGeneratedImage = async (imageBase64: string) => {
-    setIsUploading(true);
-    
-    try {
-      // Send the generated meme directly to the backend
-      const result = await uploadToBackend({
-        picture: imageBase64, // Send the single generated image
-        prompt: customPrompt
-      })
-      
-      if (!result.success) {
-        throw new Error(result.error || "Failed to upload to backend")
-      }
-      
-      setUploadResponse(result);
-      setIsUploading(false);
-    } catch (err: any) {
-      setIsUploading(false);
-      setError(err.message || "Failed to upload to backend");
-      console.error("Backend upload error:", err);
-    }
-  }
-
-  // Create coin params using the data from backend
-  const coinParams: CoinParams | null = (address && uploadResponse) ? {
-    name: uploadResponse.name,
-    symbol: uploadResponse.name.split(' ').map(word => word[0]).join('').toUpperCase(),
-    uri: uploadResponse.ipfsMetadataUri,
+  // Create coin params using the generated image
+  const coinParams: CoinParams | null = (address && generatedImage) ? {
+    name: `${selectedCoins.map(c => c.name || c.symbol).join('+')} Meme`,
+    symbol: selectedCoins.map(c => c.symbol?.[0] || 'M').join(''),
+    uri: generatedImage, // Use the generated image directly
     payoutRecipient: address as Address,
     platformReferrer: PLATFORM_REFERRER
   } : null;
@@ -132,13 +102,6 @@ export default function UploadConfirmation({
     setTimeout(() => {
       onUploadComplete()
     }, 2000)
-  }
-
-  // Determine current status message
-  const getStatusMessage = () => {
-    if (isGeneratingImage) return "Generating crypto meme with AI...";
-    if (isUploading) return "Uploading meme to IPFS...";
-    return "Processing your creation...";
   }
 
   return (
@@ -158,38 +121,34 @@ export default function UploadConfirmation({
                 Created by {formatDisplayAddress(address)}
               </p>
             </div>
-          ) : isGeneratingImage || isUploading ? (
+          ) : isGeneratingImage ? (
             <div className="flex flex-col items-center space-y-4">
               <Loader2 className="h-16 w-16 animate-spin text-primary" />
-              <p className="text-center font-medium">{getStatusMessage()}</p>
-              {isGeneratingImage && (
-                <p className="text-xs text-muted-foreground">This may take up to 30 seconds...</p>
-              )}
+              <p className="text-center font-medium">Generating crypto meme with AI...</p>
+              <p className="text-xs text-muted-foreground">This may take up to 30 seconds...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center space-y-4">
               <p className="text-center text-red-500">{error}</p>
-              <Button onClick={generateMergedImage}>Try Again</Button>
+              <Button onClick={generateMeme}>Try Again</Button>
             </div>
-          ) : uploadResponse ? (
+          ) : generatedImage ? (
             <div className="w-full space-y-6">
               {/* Display the generated meme */}
-              {(uploadResponse?.imageBase64 || generatedImage) && (
-                <div className="relative aspect-square w-full max-w-[250px] mx-auto border rounded-md overflow-hidden">
-                  <Image
-                    src={uploadResponse?.imageBase64 || generatedImage || '/placeholder.svg'}
-                    alt="Generated meme"
-                    fill
-                    className="object-contain"
-                    unoptimized
-                  />
-                </div>
-              )}
+              <div className="relative aspect-square w-full max-w-[250px] mx-auto border rounded-md overflow-hidden">
+                <Image
+                  src={generatedImage || '/placeholder.svg'}
+                  alt="Generated meme"
+                  fill
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
               
-              {/* Display name and description */}
+              {/* Display name for the coin */}
               <div className="space-y-2 text-center">
-                <h3 className="text-xl font-bold">{uploadResponse.name}</h3>
-                <p className="text-sm text-muted-foreground">{uploadResponse.description}</p>
+                <h3 className="text-xl font-bold">{coinParams?.name || "Meme Coin"}</h3>
+                <p className="text-sm text-muted-foreground">Your AI-generated crypto meme</p>
               </div>
               
               <div className="space-y-2">

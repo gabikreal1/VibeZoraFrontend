@@ -30,7 +30,13 @@ export async function uploadToBackend({
   try {
     console.log(`Uploading meme to backend with prompt: ${prompt.substring(0, 30)}...`);
     
+    // Verify backend URL is configured
+    if (!BACKEND_API_URL) {
+      throw new Error('Backend API URL is not configured in environment variables');
+    }
+    
     const apiUrl = `${BACKEND_API_URL}/api/content/content`
+    console.log(`Using backend URL: ${apiUrl}`);
     
     // Prepare data to send to backend - the backend expects 'pictures' array
     const requestData = {
@@ -38,28 +44,45 @@ export async function uploadToBackend({
       pictures: [picture] // Put the single image in an array for backend compatibility
     }
     
+    // Add CORS mode explicitly
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
+      mode: 'cors', // Explicitly request CORS
       body: JSON.stringify(requestData)
     })
     
     if (!response.ok) {
-      console.error(`API Error: ${response.status} ${response.statusText}`)
+      const errorText = await response.text().catch(() => 'No error details available');
+      console.error(`API Error: ${response.status} ${response.statusText}`);
+      console.error(`Error details: ${errorText}`);
+      
       return {
         success: false,
         ipfsMetadataUri: '',
         name: '',
         description: '',
-        error: `Upload failed: ${response.status} ${response.statusText}`
+        error: `Upload failed (${response.status}): ${response.statusText}. Make sure your backend has CORS enabled.`
       }
     }
     
     const data = await response.json()
     console.log('Backend upload response:', data)
+    
+    // Handle successful response even if it doesn't match expected format
+    if (!data.data) {
+      console.warn('Backend response missing expected data structure:', data);
+      return {
+        success: true,
+        ipfsMetadataUri: data.ipfsUri || data.ipfsMetadataUri || '',
+        imageBase64: picture,
+        name: data.metadata?.name || data.name || 'Vibe Coin',
+        description: data.metadata?.description || data.description || 'Generated with Vibe'
+      }
+    }
     
     return {
       success: true,
@@ -70,6 +93,18 @@ export async function uploadToBackend({
     }
   } catch (error) {
     console.error('Error uploading to backend:', error)
+    
+    // Provide helpful CORS-specific error message
+    if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+      return {
+        success: false,
+        ipfsMetadataUri: '',
+        name: '',
+        description: '',
+        error: 'CORS error: Your backend server needs to enable CORS for requests from localhost:3000'
+      }
+    }
+    
     return {
       success: false,
       ipfsMetadataUri: '',
