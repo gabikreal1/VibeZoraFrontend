@@ -55,4 +55,26 @@ export function verifySoraSignature(signature: string, message: string, address:
   // This is a placeholder - you'll implement Sora SDK specific verification logic here
   // For now, just returning true to indicate successful verification
   return true
-} 
+}
+
+// Add Zora coin creation handler
+export const setupZoraEventListeners = () => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('zora:createCoin', async (event: any) => {
+      const { contractConfig, coinParams } = event.detail;
+      
+      try {
+        // This is where you would use your wallet provider to send the transaction
+        console.log('Creating Zora coin with params:', coinParams);
+        
+        // Example with ethers.js or wagmi (implementation depends on your setup)
+        // const config = await prepareWriteContract(contractConfig);
+        // const { hash } = await writeContract(config);
+        
+        console.log('Contract config for coin creation:', contractConfig);
+      } catch (error) {
+        console.error('Error creating Zora coin:', error);
+      }
+    });
+  }
+}; 

@@ -13,24 +13,14 @@ import { useWalletContext } from "@/context/wallet-context"
 import { ZoraCoin, fetchTopVolumeCoins, fetchTopGainersCoins } from "@/lib/zora-coins-api"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { formatNumber } from "@/lib/utils" // Assuming a utility for formatting large numbers
-import { TrendingUp, BarChart, Users, DollarSign } from "lucide-react"
-import { 
-  generateContentWithGemini, 
-  GeminiGeneratedImage, 
-  GeminiError, 
-  isGeneratedImage, 
-  isError 
-} from "@/lib/gemini-service" // Import updated service and types
+import { TrendingUp, BarChart, Users, DollarSign, Flame } from "lucide-react"
 
 type GalleryFilter = "volume" | "gainers";
 
 export default function Home() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]) // Store ZoraCoin IDs
   const [customPrompt, setCustomPrompt] = useState("")
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [showUploadConfirmation, setShowUploadConfirmation] = useState(false)
-  const [generatedContent, setGeneratedContent] = useState<string | null>(null)
   const { isConnected } = useWalletContext()
 
   const [galleryCoins, setGalleryCoins] = useState<ZoraCoin[]>([])
@@ -71,30 +61,8 @@ export default function Home() {
     return galleryCoins.find(coin => coin.id === id);
   }
 
-  const handleGenerate = async () => {
-    const selectedCoinData = selectedImages.map(id => getSelectedCoinData(id)).filter(Boolean) as ZoraCoin[];
-    if (selectedCoinData.length === 0 && !customPrompt) return // Require at least one coin or a prompt
-
-    setIsGenerating(true)
-    setGeneratedContent(null) // Clear previous result
-
-    try {
-      const result = await generateContentWithGemini(selectedCoinData, customPrompt);
-      setGeneratedContent(result); // Store the string result
-      setShowPreview(true)
-    } catch (error) {
-      // Catch any unexpected errors from the service call itself
-      console.error("Generation failed unexpectedly:", error);
-      setGeneratedContent("An unexpected error occurred during generation.");
-      setShowPreview(true);
-    } finally {
-      setIsGenerating(false)
-    }
-  }
-
   const handleUploadClick = () => {
-    if (isConnected && generatedContent) {
-      setShowPreview(false)
+    if (isConnected && selectedImages.length > 0) {
       setShowUploadConfirmation(true) 
     }
   }
@@ -103,7 +71,6 @@ export default function Home() {
     setShowUploadConfirmation(false)
     setSelectedImages([])
     setCustomPrompt("")
-    setGeneratedContent(null) // Clear generated result
   }
 
 
@@ -118,7 +85,7 @@ export default function Home() {
         </div>
 
         <p className="text-center text-muted-foreground mb-6">
-          Select up to 2 coins from the gallery, customize with a prompt, and generate your unique AI image
+          Select up to 2 coins from the gallery, customize with a prompt, and create your NFT on Zora
         </p>
 
         {/* Gallery Filter Selector */} 
@@ -178,7 +145,7 @@ export default function Home() {
                       {/* Display Volume or % Change based on filter */} 
                       {galleryFilter === 'volume' ? (
                         <div className="flex items-center" title={`Volume (24h): ${coin.volume24h ? formatNumber(coin.volume24h, 'usd') : 'N/A'}`}>
-                          <BarChart className="h-3 w-3 mr-0.5" />
+                          <Flame className="h-3 w-3 mr-0.5" />
                           {coin.volume24h ? formatNumber(coin.volume24h, 'compact') : '-'}
                         </div>
                       ) : (
@@ -191,16 +158,17 @@ export default function Home() {
                         </div>
                       )}
                       
+                      {/* Market Cap (Now in the middle) */}
+                      <div className="flex items-center" title={`Market Cap: ${coin.marketCap ? formatNumber(coin.marketCap, 'usd') : 'N/A'}`}>
+                        <BarChart className="h-3 w-3 mr-0.5" />
+                        {coin.marketCap ? formatNumber(coin.marketCap, 'compact') : '-'}
+                      </div>
+                      
                       {/* Holders Count */}
                       <div className="flex items-center" title={`Holders: ${coin.uniqueHolders ? coin.uniqueHolders.toLocaleString() : 'N/A'}`}>
                         <Users className="h-3 w-3 mr-0.5" />
                         {coin.uniqueHolders ? formatNumber(coin.uniqueHolders, 'compact') : '-'}
                       </div>
-                    </div>
-                    {/* Market Cap */}
-                    <div className="flex items-center text-xs text-muted-foreground" title={`Market Cap: ${coin.marketCap ? formatNumber(coin.marketCap, 'usd') : 'N/A'}`}>
-                       <DollarSign className="h-3 w-3 mr-0.5" />
-                       {coin.marketCap ? formatNumber(coin.marketCap, 'compact') : '-'}
                     </div>
                   </div>
                 </CardContent>
@@ -213,25 +181,18 @@ export default function Home() {
         <div className="w-full flex flex-col md:flex-row gap-4 items-center mb-8">
           <div className="relative w-full">
             <Input
-              placeholder="Type your image generation prompt here (e.g., 'A futuristic landscape with elements of crypto')..."
+              placeholder="Type your creative prompt here (e.g., 'A futuristic landscape with elements of crypto')..."
               value={customPrompt}
               onChange={(e) => setCustomPrompt(e.target.value)}
               className="w-full"
             />
           </div>
           <Button
-            onClick={handleGenerate}
-            disabled={(selectedImages.length === 0 && !customPrompt) || isGenerating} // Disable if nothing selected AND no prompt
+            onClick={handleUploadClick}
+            disabled={selectedImages.length === 0 || !isConnected} // Disable if nothing selected
             className="w-full md:w-auto"
           >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating...
-              </>
-            ) : (
-              "Generate"
-            )}
+            Create NFT
           </Button>
         </div>
 
@@ -260,62 +221,13 @@ export default function Home() {
         )}
       </div>
 
-      {/* Preview Dialog */}
-      <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Your Generated Creation</DialogTitle>
-            <DialogDescription>
-              {isGenerating ? "Generating content..." : "Here's a preview of your customized creation"}
-            </DialogDescription>
-          </DialogHeader>
-          {/* Display Generated Content */} 
-          <div className="relative w-full max-w-sm mx-auto my-4 border rounded-md bg-muted p-4 overflow-auto max-h-96">
-            {isGenerating ? (
-              <div className="flex justify-center">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : generatedContent ? (
-              // Check if it's an image data URL
-              generatedContent.startsWith('data:image/') ? (
-                <div className="relative aspect-square w-full">
-                  <Image 
-                    src={generatedContent}
-                    alt="Generated AI Image"
-                    fill 
-                    className="object-contain"
-                    unoptimized
-                  />
-                </div>
-              ) : (
-                // Otherwise display as text
-                <div className="prose prose-sm dark:prose-invert">
-                  {generatedContent.split('\n').map((line, i) => (
-                    <p key={i}>{line}</p>
-                  ))}
-                </div>
-              )
-            ) : (
-              <p className="text-sm text-muted-foreground">No content generated yet.</p>
-            )}
-          </div>
-          <div className="flex justify-end">
-            <Button 
-              onClick={handleUploadClick} 
-              disabled={!isConnected || isGenerating || !generatedContent}
-            >
-              {isConnected ? "Upload to Zora" : "Connect Wallet to Upload"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Upload Confirmation */} 
+      {/* Upload Confirmation Dialog */}
       <UploadConfirmation
         open={showUploadConfirmation}
         onOpenChange={setShowUploadConfirmation}
         onUploadComplete={handleUploadComplete}
-        generatedContent={generatedContent}
+        selectedCoins={selectedImages.map(id => getSelectedCoinData(id)).filter(Boolean) as ZoraCoin[]}
+        customPrompt={customPrompt}
       />
     </main>
   )
